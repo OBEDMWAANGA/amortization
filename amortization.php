@@ -41,7 +41,7 @@
             $monthly_principal = $monthly_payment - $monthly_interest;
             $remaining_balance -= $monthly_principal;
 
-            // Calculate the payment date (current date + $months months)
+            // payment date (current date + $months months)
             $payment_date = date("jS F, Y", strtotime("+$months months", $current_date));
 
             echo "<tr>
@@ -53,8 +53,10 @@
                   </tr>";
         }
 
-        echo "</table>";
+        echo "</table>"; 
     }
     ?>
+    
+    <br><button> <a  href="index.html"> Back </a></button>
 </body>
 </html>
