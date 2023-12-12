@@ -1,5 +1,6 @@
 <?php
-require('fpdf/fpdf.php');
+require('./fpdf/fpdf.php');
+require('./ExcelFormulas.php');
 
 class PDF extends FPDF
 {
@@ -24,11 +25,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $loan_term = $_POST["loan_term"];
 
     $monthly_interest_rate = $interest_rate / 12;
-    $monthly_payment = ($loan_amount * $monthly_interest_rate) / (1 - (1 + $monthly_interest_rate)**(-$loan_term));
+    $pmt = abs(ExcelFormulas::PMT($interest_rate, $loan_term, $loan_amount));
+    $monthly_payment = $pmt;
 
-    $remaining_balance = $loan_amount;
+    $remaining_balance = $loan_term * $monthly_payment;
     $current_date = strtotime("now");
-
     $pdf = new PDF();
     $pdf->AddPage();
 
@@ -37,6 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $pdf->Cell(40, 10, 'Date', 1);
     $pdf->Cell(30, 10, 'Interest', 1);
     $pdf->Cell(30, 10, 'Principal', 1);
+    $pdf->Cell(30, 10, 'Installment', 1);    
     $pdf->Cell(40, 10, 'Remaining Balance', 1);
     $pdf->Ln();
 
@@ -44,16 +46,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     while ($months < $loan_term) {
         $months++;
-        $monthly_interest = $remaining_balance * $monthly_interest_rate;
-        $monthly_principal = $monthly_payment - $monthly_interest;
-        $remaining_balance -= $monthly_principal;
-
-        $payment_date = date("jS F, Y", strtotime("+$months months", $current_date));
+        $payment_date = date("jS F, Y", strtotime("+$months month", $current_date));        
+        $monthly_interest = abs(ExcelFormulas::IPMT($loan_amount, $pmt, $interest_rate, $months));
+        $monthly_principal =  abs(ExcelFormulas::PPMT($interest_rate, $months, $loan_term, $loan_amount));
+        $remaining_balance -= $monthly_payment;
 
         $pdf->Cell(20, 10, $months, 1);
         $pdf->Cell(40, 10, $payment_date, 1);
         $pdf->Cell(30, 10, 'K' . number_format($monthly_interest, 2), 1);
         $pdf->Cell(30, 10, 'K' . number_format($monthly_principal, 2), 1);
+        $pdf->Cell(30, 10, 'K' . number_format($monthly_payment, 2), 1);
         $pdf->Cell(40, 10, 'K' . number_format($remaining_balance, 2), 1);
         $pdf->Ln();
     }
